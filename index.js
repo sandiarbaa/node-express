@@ -1,40 +1,37 @@
 const express = require("express");
+const connection = require("./connection");
 const app = express();
 const port = 3000;
-const bodyParser = require("body-parser");
+const response = require("./response");
 
-app.use(bodyParser.json());
+// Middleware untuk mengizinkan akses JSON
+app.use(express.json());
 
-// route utama / endpoint menggunakan method GET
-app.get("/", (request, response) => {
-  response.send("Main Route");
+// Route untuk mendapatkan data dari database
+app.get("/", (req, res) => {
+  const sql = "SELECT * FROM mahasiswa";
+  // Eksekusi query ke database
+  connection.query(sql, (error, results, fields) => {
+    if (error) {
+      console.error("Error executing query:", error);
+      res.status(500).send("Internal Server Error");
+      return;
+    }
+    // Mengirim hasil query sebagai respons
+    // res.send(results);
+    response(200, results, "get all data from mahasiswa", res); // di kirim ke response.js
+  });
 });
 
-app.get("/hello", (req, res) => {
-  // console.log({ urlParam: req.query }); // ini kalau mau semua datanya
-  console.log({ urlParam: req.query.name }); // ini kalau mau datanya spesifik
-  res.send("Hello World! Hello Dunia!");
+app.get("/find", (req, res) => {
+  console.log(`Find NIM : ${req.query.nim}`);
+  const sql = `SELECT nama FROM mahasiswa WHERE nim = ${req.query.nim}`;
+  connection.query(sql, (error, results) => {
+    response(200, results, "find mahasiswa name", res); // di kirim ke response.js
+  });
 });
 
-// kalau menggunakan method POST
-app.post("/login", (req, res) => {
-  console.log({ requestFromExternalResource: req.body }); // req ini sesuatu yg di dapat dari luar, ex: dari postman
-
-  // jadi ini fungsinya jika kita ingin mengambil datanya spesifik, misal ini contoh ketika ingin validasi
-  const username = req.body.username; // ambil user yg dikirim dari api
-  if (username === usernameFromDB) {
-    // kalau usernamenya ada di database, maka dia boleh login
-    res.status(200).send("Login Success!");
-  }
-  res.send("Login Succes!"); // ini mengirim ke luar sesuatu yg ada di sistem, di sini mengirim string
-});
-
-app.put("/username", (req, res) => {
-  console.log({ updateData: req.body });
-  res.send("Update Succes!");
-});
-
-// untuk menjalankan port
+// Memulai server
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
